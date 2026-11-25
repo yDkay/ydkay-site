@@ -244,10 +244,15 @@
 
     this.gl = gl;
     this.canvas = canvas;
+    // Resolution, as a share of CSS pixels. Phones have small screens with
+    // dense pixels, so they start at one render pixel per CSS pixel; the
+    // frame timer below lowers it on GPUs that cannot keep up.
     var small = Math.min(window.innerWidth, window.innerHeight) < 600;
-    this.scale = small ? 0.5 : 0.7;
+    var dpr = window.devicePixelRatio || 1;
+    this.animScale = small ? 1 : 0.7;
     this.minScale = 0.35;
-    this.maxScale = small ? 0.75 : Math.min(window.devicePixelRatio || 1, 1.25);
+    this.maxScale = small ? Math.min(dpr, 1.5) : Math.min(dpr, 1.25);
+    this.scale = this.animScale;
     this.frameTimes = [];
     this.dirty = true;
     this.t = {};
@@ -275,8 +280,18 @@
     gl.useProgram(prog.p);
   };
 
+  // A still frame is drawn once, so it can afford more pixels: up to the
+  // screen's own density, within a budget of about 2.5 million pixels.
+  BlackHole.prototype.stillScale = function () {
+    var c = this.canvas;
+    var budget = Math.sqrt(2.5e6 / Math.max(1, c.clientWidth * c.clientHeight));
+    return Math.max(this.animScale, Math.min(window.devicePixelRatio || 1, 2, budget));
+  };
+
   BlackHole.prototype.draw = function (s) {
     var gl = this.gl, t;
+    var want = s.still ? this.stillScale() : this.animScale;
+    if (want !== this.scale) { this.scale = want; this.dirty = true; }
     if (this.dirty) this.resize();
     t = this.t;
 
@@ -334,18 +349,19 @@
   // 30 frames a second, so intervals well above 33 ms mean the GPU is behind.
   BlackHole.prototype.adapt = function (interval) {
     var f = this.frameTimes;
-    if (interval > 250) { f.length = 0; return; }
+    if (interval > 250) { f.length = 0; return; } // tab was hidden or stalled
     f.push(interval);
-    if (f.length < 30) return;
+    if (f.length < 15) return;
     var avg = f.reduce(function (a, b) { return a + b; }, 0) / f.length;
     f.length = 0;
-    var before = this.scale;
+    var before = this.animScale;
     if (avg > 45) {
-      this.scale = Math.max(this.minScale, this.scale * 0.85);
-      this.maxScale = this.scale; // do not climb back to a size that was too slow
+      // Far behind: drop quickly. A little behind: drop a step.
+      this.animScale = Math.max(this.minScale, this.animScale * (avg > 80 ? 0.65 : 0.85));
+      this.maxScale = this.animScale; // do not climb back to a size that was too slow
     }
-    else if (avg < 37) this.scale = Math.min(this.maxScale, this.scale * 1.06);
-    if (this.scale !== before) this.dirty = true;
+    else if (avg < 37) this.animScale = Math.min(this.maxScale, this.animScale * 1.06);
+    if (this.animScale !== before) this.dirty = true;
   };
 
   window.BlackHole = BlackHole;

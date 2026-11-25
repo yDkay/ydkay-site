@@ -250,6 +250,7 @@
       time: time,
       dist: dist,
       camDist: Math.max(dist, CAMERA_MIN),
+      still: !moving,
       tilt: (moving ? 0.085 + 0.09 * close : 0.09) + (moving ? mouse.y * 0.02 : 0),
       yaw: moving ? 0.5 + 0.9 * p + time * 0.006 + mouse.x * 0.06 : 0.5,
       roll: -0.32 * (moving ? 1 - 0.35 * smooth(0.5, 0.95, p) : 1),
