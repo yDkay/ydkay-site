@@ -118,13 +118,15 @@
     entries.forEach(function (en) {
       if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
     });
-  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 }) : null;
+  // Starts a little before the text enters the screen, so it is already
+  // readable when someone scrolls fast.
+  }, { rootMargin: '0px 0px 10% 0px', threshold: 0 }) : null;
 
   function revealAll(show) {
     Array.prototype.forEach.call(reveals, function (el) {
       if (show || !io) { el.classList.add('in'); return; }
       var r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight * 0.9) el.classList.add('in');
+      if (r.top < window.innerHeight * 1.1) el.classList.add('in');
       else io.observe(el);
     });
   }
