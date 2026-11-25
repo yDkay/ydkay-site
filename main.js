@@ -13,10 +13,10 @@
     escape: 'escape',
     escape2: 'escape',
     'lg-open': 'O que esses números significam',
-    'lg-r': 'Distância até o centro, em raios de Schwarzschild. Um raio, rₛ = 2GM/c², é o horizonte de eventos: a borda de onde nada volta.',
+    'lg-r': 'Distância até o centro, em raios de Schwarzschild. Um raio, rₛ = 2GM/c², é o horizonte de eventos: a borda de onde nada volta. Para um buraco com a massa de Sagitário A*, no centro da nossa galáxia, isso dá uns 12,7 milhões de km.',
     'lg-t': 'A velocidade de um relógio parado aqui, comparada com a de um relógio distante: √(1 − rₛ/r). No horizonte ele para.',
     'lg-v': 'A velocidade necessária para sair daqui, como fração da velocidade da luz: √(rₛ/r). No horizonte ela é exatamente c. É por isso que nada escapa.',
-    'lg-h': 'Um buraco negro não é perfeitamente negro. Ele brilha à temperatura T = ħc³ / (8πGMk). Para um com a massa do Sol, isso dá 0,00000006 K, mais frio que o espaço vazio, então ele cresce em vez de sumir.',
+    'lg-h': 'Um buraco negro não é perfeitamente negro: ele brilha à temperatura T = ħc³ / (8πGMk). Com a massa de Sagitário A*, isso dá 1,4 × 10⁻¹⁴ K visto de longe. Parado mais perto do horizonte, você mede mais, T / √(1 − rₛ/r), sem limite. Deixado em paz por uns 10⁸⁷ anos, o buraco encolheria, esquentaria e terminaria num clarão.',
     motion: 'Movimento',
     on: 'ligado',
     off: 'desligado',
@@ -129,6 +129,12 @@
   var rVal = $('r-val');
   var tVal = $('t-val');
   var vVal = $('v-val');
+  var hFin = $('h-fin'), hVal = $('h-val'), hExp = $('h-exp'), hInf = $('h-inf');
+
+  // Hawking temperature of a hole with the mass of Sagittarius A*
+  // (4.297 million Suns), in kelvin: T = hbar c^3 / (8 pi G M k).
+  var HAWKING = 1.054571817e-34 * Math.pow(299792458, 3) /
+    (8 * Math.PI * 6.6743e-11 * 4.297e6 * 1.98847e30 * 1.380649e-23);
   var canvas = $('bh');
   var bh = null;
   try {
@@ -189,6 +195,17 @@
     rVal.textContent = dist.toFixed(dist < 10 ? 2 : 1);
     tVal.textContent = Math.sqrt(Math.max(0, 1 - 1 / dist)).toFixed(3);
     vVal.textContent = Math.sqrt(Math.min(1, 1 / dist)).toFixed(3);
+    // What someone holding still at r measures: the far-away temperature
+    // divided by the clock rate. It has no limit at the horizon.
+    var rate = Math.sqrt(Math.max(0, 1 - 1 / dist));
+    var endless = rate < 1e-4;
+    hFin.hidden = endless;
+    hInf.hidden = !endless;
+    if (!endless) {
+      var parts = (HAWKING / rate).toExponential(2).split('e');
+      hVal.textContent = parts[0];
+      hExp.textContent = parts[1].replace('-', '\u2212').replace('+', '');
+    }
   }
 
   function state(now) {

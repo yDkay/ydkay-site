@@ -281,3 +281,11 @@ button.readout:hover b, button.readout[aria-expanded="true"] b { color: var(--ac
 .legend dt.lc { text-transform: none; }
 .legend dd { margin: 0; color: var(--fg); }
 @media (max-width: 760px) { .telemetry { display: none; } }
+
+.readout sup { font-size: .7em; }
+.readout [hidden] { display: none; }
+/* Narrower windows: the numbers drop to their own line under the header. */
+@media (min-width: 761px) and (max-width: 1180px) {
+  .hud { flex-wrap: wrap; row-gap: 0; }
+  .telemetry { order: 3; flex-basis: 100%; display: flex; justify-content: center; }
+}
