@@ -11,7 +11,9 @@ ray-traced in WebGL behind the content.
 | `blackhole.js` | The WebGL shader (Schwarzschild black hole, accretion disk, stars). |
 | `main.js` | Language switch, motion switch, and the scroll-to-distance mapping. |
 | `404.html` | Page GitHub Pages serves for unknown paths. |
-| `favicon.svg` | Icon. |
+| `favicon.svg` | The icon: a black hole with a slanted disk. The source for the two files below. |
+| `favicon.ico` | The same icon at 16, 32 and 48 px, for browsers that do not take SVG icons. |
+| `apple-touch-icon.png` | The icon at 180 px, for the iPhone home screen. |
 | `CNAME` | `ydkay.com.br`, the custom domain for GitHub Pages. |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are. |
 
