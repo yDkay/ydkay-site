@@ -2,9 +2,8 @@
 // camera-like glow (bloom) in three small extra passes.
 // Units: the Schwarzschild radius rs = 1. Light is bent with the
 // pseudo-Newtonian form of the null geodesic: a = -1.5 h^2 r / |r|^5.
-// Look: the choices made for the film renders of a black hole with a thin
-// disk seen almost edge-on, with Doppler beaming left out so both sides of
-// the disk are equally bright.
+// Look: a turbulent disk coloured by temperature, seen almost edge-on
+// through a long lens, with the camera rolled so the disk sits at a slant.
 (function () {
   'use strict';
 
@@ -17,55 +16,82 @@
     'uniform float uDist;',
     'uniform float uTilt;',
     'uniform float uYaw;',
+    'uniform float uRoll;',
     'uniform vec2 uShift;',
     'uniform float uZoom;',
+    'uniform float uExpo;',
 
     'float hash13(vec3 p){p=fract(p*.1031);p+=dot(p,p.zyx+31.32);return fract((p.x+p.y)*p.z);}',
     'float hash12(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}',
-    'float noise2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);',
-    '  float a=hash12(i),b=hash12(i+vec2(1.,0.)),c=hash12(i+vec2(0.,1.)),d=hash12(i+vec2(1.,1.));',
-    '  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}',
 
     'vec3 stars(vec3 d){',
     '  vec3 col=vec3(0.);',
     '  for(int L=0;L<2;L++){',
-    '    float sc=L==0?55.:130.;',
+    '    float sc=L==0?70.:150.;',
     '    vec3 p=d*sc;vec3 id=floor(p);vec3 f=fract(p)-.5;',
     '    float h=hash13(id+float(L)*17.);',
-    '    if(h>.95){',
+    '    if(h>.965){',
     '      vec3 o=vec3(hash13(id+1.3),hash13(id+2.7),hash13(id+5.1))-.5;',
     '      float dd=length(f-o*.6);',
-    '      float b=(1.-smoothstep(0.,.12,dd))*(h-.95)/.05;',
+    '      float b=(1.-smoothstep(0.,.11,dd))*(h-.965)/.035;',
     '      vec3 tint=mix(vec3(1.,.88,.76),vec3(.8,.87,1.),hash13(id+9.));',
-    '      col+=tint*b*(L==0?1.1:.6);',
+    '      col+=tint*b*(L==0?.8:.45);',
     '    }',
     '  }',
     '  return col;',
     '}',
 
-    // Thin disk, no Doppler beaming: brightness depends only on radius.
-    'vec3 disk(vec3 p,out float a){',
+    // Noise made of rings. Each ring turns as one piece at its own orbital
+    // speed, so the pattern never winds itself up, however long the page is open.
+    'float ringRow(float i,float th,float N,float fr,float seed){',
+    '  float rr=(i+.5)/fr;',
+    '  float w=uTime*.28/pow(max(rr,2.),1.5);',
+    '  float u=(th+w)*N/6.2831853;',
+    '  float j=floor(u);float g=fract(u);g=g*g*(3.-2.*g);',
+    '  return mix(hash12(vec2(i+seed,mod(j,N))),hash12(vec2(i+seed,mod(j+1.,N))),g);',
+    '}',
+    'float ringNoise(float r,float th,float fr,float N,float seed){',
+    '  float x=r*fr;float i=floor(x);float f=fract(x);f=f*f*(3.-2.*f);',
+    '  return mix(ringRow(i,th,N,fr,seed),ringRow(i+1.,th,N,fr,seed),f);',
+    '}',
+
+    // Colour by temperature: dark rust, orange, gold, then white-hot.
+    'vec3 heat(float t){',
+    '  vec3 c=mix(vec3(.15,.028,.008),vec3(.55,.14,.03),smoothstep(.01,.09,t));',
+    '  c=mix(c,vec3(1.,.46,.14),smoothstep(.08,.24,t));',
+    '  c=mix(c,vec3(1.,.74,.45),smoothstep(.2,.5,t));',
+    '  return mix(c,vec3(1.,.96,.9),smoothstep(.42,.95,t));',
+    '}',
+
+    'vec3 disk(vec3 p,vec3 v,float seed,out float a){',
     '  float r=length(p.xz);',
     '  a=0.;',
-    '  if(r<2.4||r>18.)return vec3(0.);',
-    '  float w=uTime*.35/pow(r,1.5);',
-    '  float cw=cos(w),sw=sin(w);',
-    '  vec2 q=vec2(p.x*cw-p.z*sw,p.x*sw+p.z*cw);',
-    '  float n=noise2(q*.9)*.6+noise2(q*2.6)*.4;',
-    '  float fine=.5+.5*sin(r*30.+n*7.);',
-    '  float streak=.78+.22*fine*(.5+.5*n);',
-    '  float edge=smoothstep(2.4,3.1,r)*(1.-smoothstep(10.,18.,r));',
+    '  if(r<2.9||r>15.)return vec3(0.);',
+    '  float th=atan(p.z,p.x);',
+    '  float n1=ringNoise(r,th,1.1,7.,seed);',
+    '  float n2=ringNoise(r,th,3.6,34.,seed+31.);',
+    '  float n3=ringNoise(r,th,10.,120.,seed+67.);',
+    '  float n4=ringNoise(r,th,26.,380.,seed+113.);',
+    '  float turb=n1*.34+n2*.3+n3*.22+n4*.14;',
+    '  float lanes=smoothstep(.3,.62,n2*.55+n3*.45);',
+    '  float grain=.6+.9*n4*(.4+.6*n3);',
+    '  float inner=smoothstep(2.9,3.9,r);',
+    '  float outer=1.-smoothstep(6.,15.,r);',
     '  float k=3./r;',
-    '  vec3 white=vec3(1.,.96,.9),gold=vec3(1.,.74,.42),amber=vec3(.78,.36,.12);',
-    '  vec3 c=mix(amber,gold,smoothstep(.2,.55,k));',
-    '  c=mix(c,white,smoothstep(.55,1.05,k));',
-    '  float I=pow(k,1.05)*edge*streak*2.3;',
-    '  a=clamp(edge*(.55+.4*n)*min(1.,k*2.),0.,1.);',
-    '  return c*I;',
+    '  vec3 tang=normalize(vec3(-p.z,0.,p.x));',
+    '  float s=sqrt(.5/(r-1.))*.5;',
+    '  float D=sqrt(1.-s*s)/(1.-s*dot(tang,-normalize(v)));',
+    '  float boost=D*D*D;',
+    '  float temp=pow(k,1.75)*(.3+1.5*turb)*boost*1.15;',
+    '  float body=inner*outer*(.2+.8*lanes);',
+    '  a=clamp(body*(.45+.7*turb)*min(1.,k*2.4),0.,1.);',
+    '  return heat(temp)*pow(temp,.8)*body*grain*3.6;',
     '}',
 
     'void main(){',
     '  vec2 uv=(gl_FragCoord.xy-.5*uRes)/uRes.y-uShift;',
+    '  float cr=cos(uRoll),sr=sin(uRoll);',
+    '  uv=vec2(uv.x*cr-uv.y*sr,uv.x*sr+uv.y*cr);',
     '  float cy=cos(uYaw),sy=sin(uYaw);',
     '  vec3 cam=vec3(0.,sin(uTilt),cos(uTilt))*uDist;',
     '  cam=vec3(cam.x*cy+cam.z*sy,cam.y,-cam.x*sy+cam.z*cy);',
@@ -76,37 +102,36 @@
     '  vec3 pos=cam;',
     '  vec3 hv=cross(pos,v);float h2=dot(hv,hv);',
     '  vec3 col=vec3(0.);float al=0.;bool esc=false;',
-    '  for(int i=0;i<220;i++){',
+    '  for(int i=0;i<230;i++){',
     '    float r=length(pos);',
     // Smaller steps near the photon sphere keep the thin photon ring sharp.
     '    float dt=clamp(.06*r*smoothstep(1.,4.,r)+.008,.008,2.5);',
     '    v+=-1.5*h2*pos/pow(r,5.)*dt;',
     '    vec3 np=pos+v*dt;',
-    '    if(pos.y*np.y<0.){',
-    '      vec3 pc=mix(pos,np,pos.y/(pos.y-np.y));',
-    '      float a;vec3 dc=disk(pc,a);',
-    '      col+=(1.-al)*dc;al+=(1.-al)*a;',
-    '      if(al>.985)break;',
+    // Three thin sheets (the plane and one just above and below it) give the
+    // disk some depth when it is seen almost edge-on.
+    '    float r0=length(pos.xz),r1=length(np.xz);',
+    '    for(int k=0;k<3;k++){',
+    '      float c=(float(k)-1.)*.03;',
+    '      float f0=pos.y-c*r0,f1=np.y-c*r1;',
+    '      if(f0*f1<0.){',
+    '        vec3 pc=mix(pos,np,f0/(f0-f1));',
+    '        float a;vec3 dc=disk(pc,v,float(k)*7.,a);',
+    '        float wgt=k==1?1.:.55;',
+    '        col+=(1.-al)*dc*wgt;al+=(1.-al)*a*wgt;',
+    '      }',
     '    }',
-    // A thin glowing layer around the plane: rays that graze the disk travel
-    // through more of it, which gives the bright band across the front.
-    '    float rr=length(pos.xz);',
-    '    if(abs(pos.y)<1.2&&rr>2.4&&rr<18.){',
-    '      float H=.22+.025*rr;',
-    '      float dens=exp(-pos.y*pos.y/(H*H));',
-    '      float ga;vec3 gc=disk(vec3(pos.x,0.,pos.z),ga);',
-    '      float near=clamp((uDist-5.)/15.,.15,1.);',
-    '      col+=(1.-al)*gc*dens*dt*1.1*near;',
-    '      al+=(1.-al)*min(1.,ga*dens*dt*.6*near);',
-    '      if(al>.985)break;',
-    '    }',
+    '    if(al>.985)break;',
     '    pos=np;',
     '    float nr=length(pos);',
     '    if(nr<1.)break;',
     '    if(nr>70.&&dot(pos,v)>0.){esc=true;break;}',
     '  }',
     '  if(esc)col+=(1.-al)*stars(normalize(v));',
-    '  col=1.-exp(-col*1.15);',
+    '  col*=uExpo;',
+    '  col=clamp((col*(2.51*col+.03))/(col*(2.43*col+.59)+.14),0.,1.);',
+    '  float lum=dot(col,vec3(.2126,.7152,.0722));',
+    '  col=clamp(mix(vec3(lum),col,1.08),0.,1.);',
     '  gl_FragColor=vec4(col,1.);',
     '}'
   ].join('\n');
@@ -119,7 +144,7 @@
     '        +texture2D(uTex,vUv+uTexel*vec2(-1.,1.)).rgb+texture2D(uTex,vUv+uTexel*vec2(1.,1.)).rgb;',
     '  c*=.25;',
     '  float l=dot(c,vec3(.2126,.7152,.0722));',
-    '  gl_FragColor=vec4(c*smoothstep(.5,.95,l),1.);',
+    '  gl_FragColor=vec4(c*smoothstep(.6,1.,l),1.);',
     '}'
   ].join('\n');
 
@@ -140,8 +165,7 @@
     'void main(){',
     '  vec3 c=texture2D(uScene,vUv).rgb;',
     '  vec3 b=texture2D(uBloom,vUv).rgb;',
-    '  c+=b*vec3(1.,.82,.62)*.7;',
-    '  c=1.-exp(-c*1.25);',
+    '  c=1.-(1.-c)*(1.-clamp(b*vec3(1.,.6,.32)*.75,0.,1.));',
     '  float g=hash12(vUv*uRes+fract(uTime)*91.7)-.5;',
     '  c+=g*.018;',
     '  gl_FragColor=vec4(max(c,0.),1.);',
@@ -197,7 +221,7 @@
              canvas.getContext('experimental-webgl');
     if (!gl) throw new Error('no webgl');
 
-    this.scene = program(gl, SCENE, ['uRes', 'uTime', 'uDist', 'uTilt', 'uYaw', 'uShift', 'uZoom']);
+    this.scene = program(gl, SCENE, ['uRes', 'uTime', 'uDist', 'uTilt', 'uYaw', 'uRoll', 'uShift', 'uZoom', 'uExpo']);
     this.bright = program(gl, BRIGHT, ['uTex', 'uTexel']);
     this.blur = program(gl, BLUR, ['uTex', 'uDir']);
     this.comp = program(gl, COMPOSITE, ['uScene', 'uBloom', 'uTime', 'uRes']);
@@ -253,8 +277,10 @@
     gl.uniform1f(S.u.uDist, s.dist);
     gl.uniform1f(S.u.uTilt, s.tilt);
     gl.uniform1f(S.u.uYaw, s.yaw);
+    gl.uniform1f(S.u.uRoll, s.roll || 0);
     gl.uniform2f(S.u.uShift, s.shiftX, s.shiftY);
     gl.uniform1f(S.u.uZoom, s.zoom);
+    gl.uniform1f(S.u.uExpo, s.expo || 1);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     gl.activeTexture(gl.TEXTURE0);

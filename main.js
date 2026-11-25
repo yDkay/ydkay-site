@@ -126,7 +126,8 @@
     bh = new window.BlackHole(canvas);
     root.classList.add('webgl');
   } catch (e) {
-    bh = null; // the CSS fallback stays visible
+    bh = null;
+    root.classList.add('nogl'); // show the CSS black hole instead
   }
 
   var FAR = 34, NEAR = 1.2, STILL = 20;
@@ -142,25 +143,31 @@
   }
 
   // Slow approach through the sections, then the plunge at the horizon.
-  var MID = 8, KNEE = 0.8;
+  // The camera stays outside the disk (15 rs wide) until the plunge.
+  var MID = 17, KNEE = 0.82;
   function distanceAt(p) {
     if (p <= KNEE) return FAR * Math.pow(MID / FAR, p / KNEE);
     var k = (p - KNEE) / (1 - KNEE);
     return MID * Math.pow(NEAR / MID, k * k);
   }
 
+  // Where the hole sits. Desktop: large, on the right, cut by the edge of
+  // the page. Phones: in the upper right, with the text below.
   function layout(p, moving) {
     var w = window.innerWidth, h = window.innerHeight;
     var aspect = w / h;
     var phone = w <= 760;
-    var side = moving ? smooth(0, 0.14, p) * (1 - smooth(0.82, 0.98, p)) : 1;
-    var s = { shiftX: 0, shiftY: 0, scrim: 0 };
+    var centre = moving ? smooth(0.84, 0.99, p) : 0; // drift to the middle for the plunge
+    var s = { shiftX: 0, shiftY: 0, scrim: 0, lens: 1 };
     if (phone) {
-      s.shiftY = 0.06 + 0.16 * side;
-      s.scrim = moving ? smooth(0.03, 0.12, p) : 1;
+      s.shiftX = aspect * 0.2 * (1 - centre);
+      s.shiftY = 0.2 * (1 - centre);
+      s.lens = 0.62;
+      s.scrim = moving ? 1 - centre : 1;
     } else {
-      s.shiftX = aspect * (0.1 + 0.12 * side);
-      s.scrim = moving ? side : 1;
+      s.shiftX = aspect * 0.27 * (1 - centre);
+      s.shiftY = 0.03 * (1 - centre);
+      s.scrim = moving ? (0.55 + 0.45 * smooth(0, 0.14, p)) * (1 - centre) : 1;
     }
     return s;
   }
@@ -173,19 +180,28 @@
   function state(now) {
     var p = progress();
     var moving = motion;
-    var dist = moving ? distanceAt(p) : STILL;
+    var dist = moving ? distanceAt(p) : distanceAt(0.2);
     var L = layout(p, moving);
     mouse.x += (mouse.tx - mouse.x) * 0.05;
     mouse.y += (mouse.ty - mouse.y) * 0.05;
     var time = moving ? (now - start) / 1000 : staticTime;
+    // How big the shadow looks, as a share of the screen height. It grows
+    // slowly through the sections; past the knee the lens stops compensating
+    // and the fall takes over.
+    var q = moving ? Math.min(p, KNEE) : 0.2;
+    var size = (0.24 + 0.1 * smooth(0, KNEE, q)) * L.lens;
+    var zoom = size * distanceAt(q) / 2.6;
+    var close = moving ? smooth(0.1, KNEE, p) : 0.2;
     return {
       time: time,
       dist: dist,
-      tilt: (moving ? 0.11 + 0.22 * smooth(0.12, 0.8, p) : 0.12) + (moving ? mouse.y * 0.03 : 0),
-      yaw: moving ? time * 0.012 + mouse.x * 0.12 : 0.35,
+      tilt: (moving ? 0.085 + 0.09 * close : 0.09) + (moving ? mouse.y * 0.02 : 0),
+      yaw: moving ? 0.5 + 0.9 * p + time * 0.006 + mouse.x * 0.06 : 0.5,
+      roll: -0.32 * (moving ? 1 - 0.35 * smooth(0.5, 0.95, p) : 1),
       shiftX: L.shiftX,
       shiftY: L.shiftY,
-      zoom: 1.45,
+      zoom: zoom,
+      expo: 1.1 - 0.2 * close,
       scrim: L.scrim,
       p: p
     };
@@ -250,6 +266,7 @@
     // the loop keeps the overlay and readout working.
     canvas.addEventListener('webglcontextlost', function () {
       root.classList.remove('webgl');
+      root.classList.add('nogl');
       bh = null;
     });
   }

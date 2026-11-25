@@ -239,3 +239,20 @@ main, .legal { position: relative; z-index: 1; }
   .sky, .hud, .skip { display: none; }
   body, .legal { background: #fff; color: #000; }
 }
+
+/* Slanted-disk layout: the hole fills the right side and the disk runs down
+   to the lower left, so on wide screens the text keeps to the upper left. */
+@media (min-width: 761px) {
+  .panel { padding-bottom: 20vh; }
+  .hero { justify-content: center; padding-bottom: 24vh; }
+  .display { font-size: clamp(3.4rem, 8.4vw, 8.6rem); width: min-content; }
+  .hero .lede { max-width: 26rem; }
+  .horizon { padding-bottom: 7rem; }
+}
+
+/* With JavaScript, the CSS black hole shows only when WebGL is not available,
+   so it never flashes while the shader is being prepared. */
+.js .sky-fallback { opacity: 0; }
+.js.nogl .sky-fallback { opacity: 1; }
+.sky canvas { opacity: 0; transition: opacity 1.4s ease; }
+.webgl .sky canvas { opacity: 1; }
