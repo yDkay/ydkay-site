@@ -181,7 +181,7 @@
     return {
       time: time,
       dist: dist,
-      tilt: (moving ? 0.16 + 0.1 * smooth(0.2, 0.8, p) : 0.18) + (moving ? mouse.y * 0.05 : 0),
+      tilt: (moving ? 0.11 + 0.22 * smooth(0.12, 0.8, p) : 0.12) + (moving ? mouse.y * 0.03 : 0),
       yaw: moving ? time * 0.012 + mouse.x * 0.12 : 0.35,
       shiftX: L.shiftX,
       shiftY: L.shiftY,
