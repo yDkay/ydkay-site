@@ -189,7 +189,7 @@
     // slowly through the sections; past the knee the lens stops compensating
     // and the fall takes over.
     var q = moving ? Math.min(p, KNEE) : 0.2;
-    var size = (0.24 + 0.1 * smooth(0, KNEE, q)) * L.lens;
+    var size = (0.285 + 0.1 * smooth(0, KNEE, q)) * L.lens;
     var zoom = size * distanceAt(q) / 2.6;
     var close = moving ? smooth(0.1, KNEE, p) : 0.2;
     return {
