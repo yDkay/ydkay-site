@@ -60,7 +60,8 @@ a { color: inherit; }
 /* Keeps text readable where the disk is bright. */
 .scrim {
   position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(3, 3, 4, .9) 0%, rgba(3, 3, 4, .8) 34%, rgba(3, 3, 4, .55) 52%, rgba(3, 3, 4, 0) 66%);
+  /* Dark as far as the text column reaches, then a fade. */
+  background: linear-gradient(90deg, rgba(3, 3, 4, .9) 0, rgba(3, 3, 4, .88) calc(var(--pad) + 29rem), rgba(3, 3, 4, .78) calc(var(--pad) + 35rem), rgba(3, 3, 4, .5) calc(var(--pad) + 43rem), rgba(3, 3, 4, .2) calc(var(--pad) + 51rem), rgba(3, 3, 4, 0) calc(var(--pad) + 60rem));
   opacity: var(--scrim, 0);
 }
 
@@ -222,12 +223,7 @@ main, .legal { position: relative; z-index: 1; }
 .js.motion .cue .arrow { animation: drift 2.4s ease-in-out infinite; }
 @keyframes drift { 50% { transform: translateY(.35rem); } }
 
-/* Phones: the hole sits in the upper half, text below. */
-/* Phones, and any window taller than it is wide: hole on top, text below. */
-@media (max-width: 760px), (max-aspect-ratio: 1/1) {
-  .scrim { background: linear-gradient(0deg, rgba(3, 3, 4, .9) 0%, rgba(3, 3, 4, .6) 45%, rgba(3, 3, 4, 0) 70%); }
-  .sky-fallback { --fx: 50%; background-position: 0 -18vh; }
-  .panel { justify-content: flex-end; padding-bottom: 5rem; }
+@media (max-width: 760px) {
   .chip { padding: .5rem .7rem; }
 }
 
@@ -241,14 +237,13 @@ main, .legal { position: relative; z-index: 1; }
 }
 
 /* Slanted-disk layout: the hole fills the right side and the disk runs down
-   to the lower left, so on wide screens the text keeps to the upper left. */
-@media (min-width: 761px) and (min-aspect-ratio: 1001/1000) {
-  .panel { padding-bottom: 20vh; }
-  .hero { justify-content: center; padding-bottom: 24vh; }
-  .display { font-size: clamp(3.4rem, 8.4vw, 8.6rem); width: min-content; }
-  .hero .lede { max-width: 26rem; }
-  .horizon { padding-bottom: 7rem; }
-}
+   to the lower left, so the text keeps to the upper left. The stacked layout
+   at the end of this file undoes this for phones and tall windows. */
+.panel { padding-bottom: 20vh; }
+.hero { justify-content: center; padding-bottom: 24vh; }
+.display { font-size: clamp(3.4rem, 8.4vw, 8.6rem); width: min-content; }
+.hero .lede { max-width: 26rem; }
+.horizon { padding-bottom: 7rem; }
 
 /* With JavaScript, the CSS black hole shows only when WebGL is not available,
    so it never flashes while the shader is being prepared. */
@@ -261,13 +256,15 @@ main, .legal { position: relative; z-index: 1; }
 .telemetry { position: relative; }
 button.readout {
   font: inherit; letter-spacing: inherit; color: inherit;
-  background: none; border: 0; margin: 0; padding: .6rem .5rem; cursor: pointer;
+  background: rgba(3, 3, 4, .62); border: 0; margin: 0; padding: .6rem .9rem; cursor: pointer;
   border-radius: 999px;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
 }
 button.readout:hover b, button.readout[aria-expanded="true"] b { color: var(--accent); }
 .legend {
   position: absolute; top: calc(100% + .6rem); left: 50%; transform: translateX(-50%);
   width: min(30rem, 86vw);
+  max-height: calc(100vh - 7rem); max-height: calc(100dvh - 7rem); overflow: auto;
   padding: 1.1rem 1.25rem;
   background: rgba(3, 3, 4, .94);
   border: 1px solid var(--line); border-radius: 12px;
@@ -280,14 +277,22 @@ button.readout:hover b, button.readout[aria-expanded="true"] b { color: var(--ac
 .legend dt { font: .72rem/2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .legend dt.lc { text-transform: none; }
 .legend dd { margin: 0; color: var(--fg); }
-@media (max-width: 760px) { .telemetry { display: none; } }
 
 .readout sup { font-size: .7em; }
 .readout [hidden] { display: none; }
 /* Narrower windows: the numbers drop to their own line under the header. */
-@media (min-width: 761px) and (max-width: 1180px) {
+@media (max-width: 1180px) {
   .hud { flex-wrap: wrap; row-gap: 0; }
   .telemetry { order: 3; flex-basis: 100%; display: flex; justify-content: center; }
+}
+/* Phones: the four numbers wrap onto two lines. */
+@media (max-width: 760px) {
+  button.readout { flex-wrap: wrap; justify-content: center; gap: .15rem .9rem; font-size: .68rem; padding: .45rem .8rem; border-radius: 14px; }
+  .readout .dot { display: none; }
+  .legend { width: 92vw; max-height: calc(100dvh - 10rem); }
+  .legend dl > div { grid-template-columns: 1fr; gap: .1rem; }
+  .legend dl > div > dd { grid-column: 1; }
+  .legend dl > div > dd.start { margin-top: .2rem; }
 }
 
 .legend dd { grid-column: 2; }
@@ -314,3 +319,16 @@ button.readout:hover b, button.readout[aria-expanded="true"] b { color: var(--ac
       var(--bg);
   }
 }
+
+/* Stacked layout: phones, and any window taller than it is wide. The hole
+   sits on top and the text below. main.js reads this same query. */
+@media (max-width: 760px), (max-aspect-ratio: 1/1) {
+  .panel { justify-content: flex-end; padding-bottom: 5rem; }
+  .hero { justify-content: flex-end; padding-bottom: clamp(3rem, 9vh, 6rem); }
+  .display { font-size: clamp(3.4rem, 11vw, 10rem); width: auto; }
+  .hero .lede { max-width: 34rem; }
+  /* Sized by the text block, which is about 24rem tall, not by the screen. */
+  .scrim { background: linear-gradient(0deg, rgba(3, 3, 4, .92) 0, rgba(3, 3, 4, .88) 23rem, rgba(3, 3, 4, .45) 29rem, rgba(3, 3, 4, 0) 36rem); }
+}
+
+.readout .values { display: contents; }

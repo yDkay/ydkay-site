@@ -72,6 +72,8 @@
     langBtn.setAttribute('aria-label', next === 'pt' ? 'EN, view in English' : 'PT, ver em português');
     document.title = next === 'pt' ? 'yDkay · Nada escapa' : 'yDkay · Nothing escapes';
     renderMotionLabel();
+    readoutKey = ''; lastP = -1; // numbers use a comma in Portuguese
+    if (typeof paint === 'function' && scrimEl) paint(performance.now(), false);
     try { localStorage.setItem('lang', next); } catch (e) {}
   }
 
@@ -151,7 +153,7 @@
 
   // The fall ends on the horizon itself (1 rs). The camera stops a hair
   // outside it, because there is nothing to draw from the horizon.
-  var FAR = 34, NEAR = 1, CAMERA_MIN = 1.04, STILL = 20;
+  var FAR = 34, NEAR = 1, CAMERA_MIN = 1.04;
   var mouse = { x: 0, y: 0, tx: 0, ty: 0 };
   var raf = 0, start = performance.now(), lastFrame = 0, staticTime = 18;
 
@@ -174,40 +176,53 @@
 
   // Where the hole sits. Desktop: large, on the right, cut by the edge of
   // the page. Phones: in the upper right, with the text below.
+  // The same query the stylesheet uses for the stacked layout.
+  var stacked = window.matchMedia('(max-width: 760px), (max-aspect-ratio: 1/1)');
+
   function layout(p, moving) {
     var w = window.innerWidth, h = window.innerHeight;
     var aspect = w / h;
-    var phone = w <= 760 || aspect <= 1; // matches the stacked layout in the CSS
+    var phone = stacked.matches;
     var centre = moving ? smooth(0.84, 0.99, p) : 0; // drift to the middle for the plunge
     var s = { shiftX: 0, shiftY: 0, scrim: 0, lens: 1 };
     if (phone) {
       s.shiftX = aspect * 0.2 * (1 - centre);
-      s.shiftY = 0.2 * (1 - centre);
+      s.shiftY = 0.25 * (1 - centre);
       s.lens = 0.62;
       s.scrim = moving ? 1 - centre : 1;
     } else {
       s.shiftX = aspect * 0.27 * (1 - centre);
       s.shiftY = 0.03 * (1 - centre);
-      s.scrim = moving ? (0.55 + 0.45 * smooth(0, 0.14, p)) * (1 - centre) : 1;
+      s.scrim = moving ? (0.8 + 0.2 * smooth(0, 0.14, p)) * (1 - centre) : 1;
     }
     return s;
   }
 
+  var readoutKey = '';
   function updateReadout(dist) {
     // Schwarzschild, in units of rs: a clock held at r runs at sqrt(1 - 1/r)
     // of the far-away rate, and the escape speed is sqrt(1/r) of c.
-    rVal.textContent = dist.toFixed(dist < 10 ? 2 : 1);
-    tVal.textContent = Math.sqrt(Math.max(0, 1 - 1 / dist)).toFixed(3);
-    vVal.textContent = Math.sqrt(Math.min(1, 1 / dist)).toFixed(3);
-    // What someone holding still at r measures: the far-away temperature
-    // divided by the clock rate. It has no limit at the horizon.
     var rate = Math.sqrt(Math.max(0, 1 - 1 / dist));
     var endless = rate < 1e-4;
+    // What someone holding still at r measures: the far-away temperature
+    // divided by the clock rate. It has no limit at the horizon.
+    var parts = endless ? ['', ''] : (HAWKING / rate).toExponential(2).split('e');
+    var texts = [
+      dist.toFixed(dist < 10 ? 2 : 1),
+      rate.toFixed(3),
+      Math.sqrt(Math.min(1, 1 / dist)).toFixed(3),
+      parts[0]
+    ].map(function (x) { return lang === 'pt' ? x.replace('.', ',') : x; });
+    var key = texts.join('|') + parts[1];
+    if (key === readoutKey) return; // nothing changed since the last frame
+    readoutKey = key;
+    rVal.textContent = texts[0];
+    tVal.textContent = texts[1];
+    vVal.textContent = texts[2];
     hFin.hidden = endless;
     hInf.hidden = !endless;
     if (!endless) {
-      var parts = (HAWKING / rate).toExponential(2).split('e');
-      hVal.textContent = parts[0];
+      hVal.textContent = texts[3];
       hExp.textContent = parts[1].replace('-', '\u2212').replace('+', '');
     }
   }
@@ -215,7 +230,9 @@
   function state(now) {
     var p = progress();
     var moving = motion;
-    var dist = moving ? distanceAt(p) : distanceAt(0.2);
+    // With motion off the page holds its opening frame, and the numbers
+    // stay at the opening values the legend describes.
+    var dist = moving ? distanceAt(p) : distanceAt(0);
     var L = layout(p, moving);
     mouse.x += (mouse.tx - mouse.x) * 0.05;
     mouse.y += (mouse.ty - mouse.y) * 0.05;
@@ -223,10 +240,10 @@
     // How big the shadow looks, as a share of the screen height. It grows
     // slowly through the sections; past the knee the lens stops compensating
     // and the fall takes over.
-    var q = moving ? Math.min(p, KNEE) : 0.2;
+    var q = moving ? Math.min(p, KNEE) : 0;
     var size = (0.285 + 0.1 * smooth(0, KNEE, q)) * L.lens;
     var zoom = size * distanceAt(q) / 2.6;
-    var close = moving ? smooth(0.1, KNEE, p) : 0.2;
+    var close = moving ? smooth(0.1, KNEE, p) : 0;
     return {
       time: time,
       dist: dist,
@@ -256,7 +273,15 @@
     var sc = s.scrim.toFixed(3);
     if (sc !== lastScrim) { scrimEl.style.setProperty('--scrim', sc); lastScrim = sc; }
     updateReadout(s.dist);
-    if (bh && drawSky && !past) bh.draw(s);
+    if (bh && drawSky && !past) {
+      try {
+        bh.draw(s);
+      } catch (e) {
+        bh = null; // a failed draw means no more WebGL: show the CSS hole
+        root.classList.remove('webgl');
+        root.classList.add('nogl');
+      }
+    }
   }
 
   function loop(now) {
@@ -315,8 +340,16 @@
     readout.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
   readout.addEventListener('click', function () { setLegend(legend.hidden); });
+  var telemetry = readout.parentNode;
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !legend.hidden) { setLegend(false); readout.focus(); }
+    if (e.key !== 'Escape' || legend.hidden) return;
+    var inside = telemetry.contains(document.activeElement);
+    setLegend(false);
+    if (inside) readout.focus();
+  });
+  // Tabbing away closes it, so it never covers what has focus.
+  telemetry.addEventListener('focusout', function (e) {
+    if (!legend.hidden && e.relatedTarget && !telemetry.contains(e.relatedTarget)) setLegend(false);
   });
   document.addEventListener('click', function (e) {
     if (!legend.hidden && !legend.contains(e.target) && !readout.contains(e.target)) setLegend(false);

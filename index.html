@@ -16,7 +16,7 @@
 <meta property="og:title" content="yDkay · Nothing escapes">
 <meta property="og:description" content="yDkay is the company. Caio Consoli is what is inside. The work: finding where things break.">
 <meta property="og:site_name" content="yDkay">
-<link rel="stylesheet" href="/styles.css?v=23i">
+<link rel="stylesheet" href="/styles.css?v=26i">
 <script>document.documentElement.classList.add('js');</script>
 <script type="application/ld+json">
 {
@@ -49,7 +49,8 @@
 <header class="hud">
   <a class="mark" href="#top" aria-label="yDkay, back to top">y<span>D</span>kay</a>
   <div class="telemetry">
-    <button type="button" class="readout" id="readout" aria-expanded="false" aria-controls="legend">
+    <button type="button" class="readout" id="readout" aria-expanded="false" aria-controls="legend" aria-labelledby="readout-label" aria-describedby="readout-values">
+      <span class="values" id="readout-values">
       <span>r <b id="r-val">34.0</b> r<sub>s</sub></span>
       <span class="dot" aria-hidden="true">·</span>
       <span><span data-i18n="clock">time</span> <b id="t-val">0.985</b>×</span>
@@ -57,9 +58,10 @@
       <span><span data-i18n="escape">escape</span> <b id="v-val">0.171</b> c</span>
       <span class="dot extra" aria-hidden="true">·</span>
       <span class="extra">hawking <span id="h-fin"><b id="h-val">1.46</b> × 10<sup id="h-exp">−14</sup></span><b id="h-inf" hidden>∞</b> K</span>
-      <span class="sr-only" data-i18n="lg-open">What these numbers mean</span>
+      </span>
+      <span class="sr-only" id="readout-label" data-i18n="lg-open">What these numbers mean</span>
     </button>
-    <div class="legend" id="legend" hidden>
+    <div class="legend" id="legend" tabindex="0" hidden>
       <dl>
         <div><dt class="lc">r</dt><dd data-i18n="lg-r">Distance from the centre, in Schwarzschild radii. One radius, rₛ = 2GM/c², is the event horizon: the edge nothing returns from. For a hole with the mass of Sagittarius A*, at the centre of our galaxy, that is about 12.7 million km.</dd><dd class="start" data-i18n="lg-r0">The page opens at 34 radii: about 430 million km out, nearly three times the distance from the Earth to the Sun.</dd></div>
         <div><dt data-i18n="clock2">time</dt><dd data-i18n="lg-t">How fast a clock held here ticks, compared with one far away: √(1 − rₛ/r). At the horizon it stops.</dd><dd class="start" data-i18n="lg-t0">It opens at 0.985: a clock here falls about 21 minutes behind every day.</dd></div>
@@ -141,7 +143,7 @@
   <p class="copy">© <span id="year">2026</span> YDKAY TECHNOLOGIES LTDA</p>
 </footer>
 
-<script src="/blackhole.js?v=23i" defer></script>
-<script src="/main.js?v=23i" defer></script>
+<script src="/blackhole.js?v=26i" defer></script>
+<script src="/main.js?v=26i" defer></script>
 </body>
 </html>

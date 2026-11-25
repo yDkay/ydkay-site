@@ -48,7 +48,9 @@
     '  float w=uTime*.28/pow(max(rr,2.),1.5);',
     '  float u=(th+w)*N/6.2831853;',
     '  float j=floor(u);float g=fract(u);g=g*g*(3.-2.*g);',
-    '  return mix(hash12(vec2(i+seed,mod(j,N))),hash12(vec2(i+seed,mod(j+1.,N))),g);',
+    '  float m0=mod(j,N);if(m0>=N)m0=0.;',
+    '  float m1=m0+1.;if(m1>=N)m1=0.;',
+    '  return mix(hash12(vec2(i+seed,m0)),hash12(vec2(i+seed,m1)),g);',
     '}',
     'float ringNoise(float r,float th,float fr,float N,float seed){',
     '  float x=r*fr;float i=floor(x);float f=fract(x);f=f*f*(3.-2.*f);',
@@ -109,7 +111,8 @@
     '    float r=length(pos);',
     // Smaller steps near the photon sphere keep the thin photon ring sharp.
     '    float dt=clamp(.06*r*smoothstep(1.,4.,r)+.008,.008,2.5);',
-    '    v+=-1.5*h2*pos/pow(r,5.)*dt;',
+    '    float rq=r*r;',
+    '    v+=-1.5*h2*pos/(rq*rq*r)*dt;',
     '    vec3 np=pos+v*dt;',
     // Three thin sheets (the plane and one just above and below it) give the
     // disk some depth when it is seen almost edge-on.
@@ -220,9 +223,13 @@
   }
 
   function BlackHole(canvas) {
-    var gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false }) ||
+    var gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: true }) ||
              canvas.getContext('experimental-webgl');
     if (!gl) throw new Error('no webgl');
+    // The ray tracer needs full float precision; without it the image
+    // breaks up, so the page shows the CSS black hole instead.
+    var hp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+    if (!hp || hp.precision === 0) throw new Error('no highp float');
 
     this.scene = program(gl, SCENE, ['uRes', 'uTime', 'uDist', 'uTilt', 'uYaw', 'uRoll', 'uShift', 'uZoom', 'uExpo']);
     this.bright = program(gl, BRIGHT, ['uTex', 'uTexel']);
@@ -240,7 +247,7 @@
     var small = Math.min(window.innerWidth, window.innerHeight) < 600;
     this.scale = small ? 0.5 : 0.7;
     this.minScale = 0.35;
-    this.maxScale = Math.min(window.devicePixelRatio || 1, 1.25);
+    this.maxScale = small ? 0.75 : Math.min(window.devicePixelRatio || 1, 1.25);
     this.frameTimes = [];
     this.dirty = true;
     this.t = {};
@@ -333,7 +340,10 @@
     var avg = f.reduce(function (a, b) { return a + b; }, 0) / f.length;
     f.length = 0;
     var before = this.scale;
-    if (avg > 45) this.scale = Math.max(this.minScale, this.scale * 0.85);
+    if (avg > 45) {
+      this.scale = Math.max(this.minScale, this.scale * 0.85);
+      this.maxScale = this.scale; // do not climb back to a size that was too slow
+    }
     else if (avg < 37) this.scale = Math.min(this.maxScale, this.scale * 1.06);
     if (this.scale !== before) this.dirty = true;
   };
