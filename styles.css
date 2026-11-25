@@ -223,8 +223,8 @@ main, .legal { position: relative; z-index: 1; }
 @keyframes drift { 50% { transform: translateY(.35rem); } }
 
 /* Phones: the hole sits in the upper half, text below. */
-@media (max-width: 760px) {
-  .readout { display: none; }
+/* Phones, and any window taller than it is wide: hole on top, text below. */
+@media (max-width: 760px), (max-aspect-ratio: 1/1) {
   .scrim { background: linear-gradient(0deg, rgba(3, 3, 4, .9) 0%, rgba(3, 3, 4, .6) 45%, rgba(3, 3, 4, 0) 70%); }
   .sky-fallback { --fx: 50%; background-position: 0 -18vh; }
   .panel { justify-content: flex-end; padding-bottom: 5rem; }
@@ -242,7 +242,7 @@ main, .legal { position: relative; z-index: 1; }
 
 /* Slanted-disk layout: the hole fills the right side and the disk runs down
    to the lower left, so on wide screens the text keeps to the upper left. */
-@media (min-width: 761px) {
+@media (min-width: 761px) and (min-aspect-ratio: 1001/1000) {
   .panel { padding-bottom: 20vh; }
   .hero { justify-content: center; padding-bottom: 24vh; }
   .display { font-size: clamp(3.4rem, 8.4vw, 8.6rem); width: min-content; }
@@ -288,4 +288,29 @@ button.readout:hover b, button.readout[aria-expanded="true"] b { color: var(--ac
 @media (min-width: 761px) and (max-width: 1180px) {
   .hud { flex-wrap: wrap; row-gap: 0; }
   .telemetry { order: 3; flex-basis: 100%; display: flex; justify-content: center; }
+}
+
+.legend dd { grid-column: 2; }
+.legend dd.start { margin-top: -.45rem; color: var(--muted); }
+
+/* The CSS black hole (no WebGL), drawn to match: on the right, slanted. */
+.sky-fallback {
+  inset: -40%;
+  transform: rotate(-18deg);
+  --fx: 64.5%; --fy: 55.5%;
+  background:
+    radial-gradient(circle at var(--fx) var(--fy), #000 0 24vmin, transparent 24.4vmin),
+    radial-gradient(ellipse 120vmin 7vmin at var(--fx) var(--fy), rgba(255, 244, 228, .95), rgba(255, 176, 96, .7) 34%, rgba(150, 52, 14, .35) 68%, transparent 100%),
+    radial-gradient(circle at var(--fx) var(--fy), transparent 24vmin, rgba(255, 246, 232, .95) 25vmin, rgba(255, 190, 120, .75) 31vmin, rgba(170, 70, 20, .3) 40vmin, transparent 50vmin),
+    var(--bg);
+}
+@media (max-width: 760px), (max-aspect-ratio: 1/1) {
+  .sky-fallback {
+    --fx: 54%; --fy: 39%; background-position: 0 0;
+    background:
+      radial-gradient(circle at var(--fx) var(--fy), #000 0 15vmax, transparent 15.3vmax),
+      radial-gradient(ellipse 70vmax 4.5vmax at var(--fx) var(--fy), rgba(255, 244, 228, .95), rgba(255, 176, 96, .7) 34%, rgba(150, 52, 14, .35) 68%, transparent 100%),
+      radial-gradient(circle at var(--fx) var(--fy), transparent 15vmax, rgba(255, 246, 232, .95) 15.7vmax, rgba(255, 190, 120, .75) 19vmax, rgba(170, 70, 20, .3) 25vmax, transparent 31vmax),
+      var(--bg);
+  }
 }

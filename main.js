@@ -13,6 +13,10 @@
     escape: 'escape',
     escape2: 'escape',
     'lg-open': 'O que esses números significam',
+    'lg-r0': 'A página abre a 34 raios: uns 430 milhões de km, quase três vezes a distância da Terra ao Sol.',
+    'lg-t0': 'Abre em 0,985: um relógio aqui atrasa uns 21 minutos por dia.',
+    'lg-v0': 'Abre em 0,171 c: uns 51 mil km por segundo.',
+    'lg-h0': 'Abre em 1,46 × 10⁻¹⁴ K: uns duzentos trilhões de vezes mais frio que os 2,7 K do espaço vazio.',
     'lg-r': 'Distância até o centro, em raios de Schwarzschild. Um raio, rₛ = 2GM/c², é o horizonte de eventos: a borda de onde nada volta. Para um buraco com a massa de Sagitário A*, no centro da nossa galáxia, isso dá uns 12,7 milhões de km.',
     'lg-t': 'A velocidade de um relógio parado aqui, comparada com a de um relógio distante: √(1 − rₛ/r). No horizonte ele para.',
     'lg-v': 'A velocidade necessária para sair daqui, como fração da velocidade da luz: √(rₛ/r). No horizonte ela é exatamente c. É por isso que nada escapa.',
@@ -173,7 +177,7 @@
   function layout(p, moving) {
     var w = window.innerWidth, h = window.innerHeight;
     var aspect = w / h;
-    var phone = w <= 760;
+    var phone = w <= 760 || aspect <= 1; // matches the stacked layout in the CSS
     var centre = moving ? smooth(0.84, 0.99, p) : 0; // drift to the middle for the plunge
     var s = { shiftX: 0, shiftY: 0, scrim: 0, lens: 1 };
     if (phone) {
