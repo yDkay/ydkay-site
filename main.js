@@ -8,7 +8,15 @@
 
   var PT = {
     skip: 'Pular para o conteúdo',
-    clock: 'relógio',
+    clock: 'tempo',
+    clock2: 'tempo',
+    escape: 'escape',
+    escape2: 'escape',
+    'lg-open': 'O que esses números significam',
+    'lg-r': 'Distância até o centro, em raios de Schwarzschild. Um raio, rₛ = 2GM/c², é o horizonte de eventos: a borda de onde nada volta.',
+    'lg-t': 'A velocidade de um relógio parado aqui, comparada com a de um relógio distante: √(1 − rₛ/r). No horizonte ele para.',
+    'lg-v': 'A velocidade necessária para sair daqui, como fração da velocidade da luz: √(rₛ/r). No horizonte ela é exatamente c. É por isso que nada escapa.',
+    'lg-h': 'Um buraco negro não é perfeitamente negro. Ele brilha à temperatura T = ħc³ / (8πGMk). Para um com a massa do Sol, isso dá 0,00000006 K, mais frio que o espaço vazio, então ele cresce em vez de sumir.',
     motion: 'Movimento',
     on: 'ligado',
     off: 'desligado',
@@ -120,6 +128,7 @@
   var contact = $('contact');
   var rVal = $('r-val');
   var tVal = $('t-val');
+  var vVal = $('v-val');
   var canvas = $('bh');
   var bh = null;
   try {
@@ -130,7 +139,9 @@
     root.classList.add('nogl'); // show the CSS black hole instead
   }
 
-  var FAR = 34, NEAR = 1.2, STILL = 20;
+  // The fall ends on the horizon itself (1 rs). The camera stops a hair
+  // outside it, because there is nothing to draw from the horizon.
+  var FAR = 34, NEAR = 1, CAMERA_MIN = 1.04, STILL = 20;
   var mouse = { x: 0, y: 0, tx: 0, ty: 0 };
   var raf = 0, start = performance.now(), lastFrame = 0, staticTime = 18;
 
@@ -173,8 +184,11 @@
   }
 
   function updateReadout(dist) {
+    // Schwarzschild, in units of rs: a clock held at r runs at sqrt(1 - 1/r)
+    // of the far-away rate, and the escape speed is sqrt(1/r) of c.
     rVal.textContent = dist.toFixed(dist < 10 ? 2 : 1);
-    tVal.textContent = Math.sqrt(Math.max(0, 1 - 1 / dist)).toFixed(2);
+    tVal.textContent = Math.sqrt(Math.max(0, 1 - 1 / dist)).toFixed(3);
+    vVal.textContent = Math.sqrt(Math.min(1, 1 / dist)).toFixed(3);
   }
 
   function state(now) {
@@ -195,6 +209,7 @@
     return {
       time: time,
       dist: dist,
+      camDist: Math.max(dist, CAMERA_MIN),
       tilt: (moving ? 0.085 + 0.09 * close : 0.09) + (moving ? mouse.y * 0.02 : 0),
       yaw: moving ? 0.5 + 0.9 * p + time * 0.006 + mouse.x * 0.06 : 0.5,
       roll: -0.32 * (moving ? 1 - 0.35 * smooth(0.5, 0.95, p) : 1),
@@ -270,6 +285,21 @@
       bh = null;
     });
   }
+
+  /* ---------- Legend for the numbers in the header ---------- */
+
+  var readout = $('readout'), legend = $('legend');
+  function setLegend(open) {
+    legend.hidden = !open;
+    readout.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  readout.addEventListener('click', function () { setLegend(legend.hidden); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !legend.hidden) { setLegend(false); readout.focus(); }
+  });
+  document.addEventListener('click', function (e) {
+    if (!legend.hidden && !legend.contains(e.target) && !readout.contains(e.target)) setLegend(false);
+  });
 
   $('year').textContent = String(new Date().getFullYear());
 

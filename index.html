@@ -14,7 +14,7 @@
 <meta property="og:title" content="yDkay · Nothing escapes">
 <meta property="og:description" content="yDkay is the company. Caio Consoli is what is inside. The work: finding where things break.">
 <meta property="og:site_name" content="yDkay">
-<link rel="stylesheet" href="/styles.css?v=18i">
+<link rel="stylesheet" href="/styles.css?v=19i">
 <script>document.documentElement.classList.add('js');</script>
 <script type="application/ld+json">
 {
@@ -46,10 +46,23 @@
 
 <header class="hud">
   <a class="mark" href="#top" aria-label="yDkay, back to top">y<span>D</span>kay</a>
-  <div class="readout" aria-hidden="true">
-    <span>r <b id="r-val">34.0</b> r<sub>s</sub></span>
-    <span class="dot">·</span>
-    <span><span data-i18n="clock">clock</span> <b id="t-val">0.99</b>×</span>
+  <div class="telemetry">
+    <button type="button" class="readout" id="readout" aria-expanded="false" aria-controls="legend">
+      <span>r <b id="r-val">34.0</b> r<sub>s</sub></span>
+      <span class="dot" aria-hidden="true">·</span>
+      <span><span data-i18n="clock">time</span> <b id="t-val">0.985</b>×</span>
+      <span class="dot" aria-hidden="true">·</span>
+      <span><span data-i18n="escape">escape</span> <b id="v-val">0.171</b> c</span>
+      <span class="sr-only" data-i18n="lg-open">What these numbers mean</span>
+    </button>
+    <div class="legend" id="legend" hidden>
+      <dl>
+        <div><dt class="lc">r</dt><dd data-i18n="lg-r">Distance from the centre, in Schwarzschild radii. One radius, rₛ = 2GM/c², is the event horizon: the edge nothing returns from.</dd></div>
+        <div><dt data-i18n="clock2">time</dt><dd data-i18n="lg-t">How fast a clock held here ticks, compared with one far away: √(1 − rₛ/r). At the horizon it stops.</dd></div>
+        <div><dt data-i18n="escape2">escape</dt><dd data-i18n="lg-v">The speed needed to get away from here, as a share of the speed of light: √(rₛ/r). At the horizon it is exactly c. That is why nothing escapes.</dd></div>
+        <div><dt>Hawking</dt><dd data-i18n="lg-h">A black hole is not perfectly black. It glows at T = ħc³ / (8πGMk). For one with the mass of the Sun that is 0.00000006 K, colder than empty space, so it grows instead of fading.</dd></div>
+      </dl>
+    </div>
   </div>
   <div class="controls">
     <button type="button" id="motion" class="chip" aria-pressed="true">
@@ -124,7 +137,7 @@
   <p class="copy">© <span id="year">2026</span> YDKAY TECHNOLOGIES LTDA</p>
 </footer>
 
-<script src="/blackhole.js?v=18i" defer></script>
-<script src="/main.js?v=18i" defer></script>
+<script src="/blackhole.js?v=19i" defer></script>
+<script src="/main.js?v=19i" defer></script>
 </body>
 </html>

@@ -256,3 +256,28 @@ main, .legal { position: relative; z-index: 1; }
 .js.nogl .sky-fallback { opacity: 1; }
 .sky canvas { opacity: 0; transition: opacity 1.4s ease; }
 .webgl .sky canvas { opacity: 1; }
+
+/* The numbers in the header are a button that opens their legend. */
+.telemetry { position: relative; }
+button.readout {
+  font: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 0; margin: 0; padding: .6rem .5rem; cursor: pointer;
+  border-radius: 999px;
+}
+button.readout:hover b, button.readout[aria-expanded="true"] b { color: var(--accent); }
+.legend {
+  position: absolute; top: calc(100% + .6rem); left: 50%; transform: translateX(-50%);
+  width: min(30rem, 86vw);
+  padding: 1.1rem 1.25rem;
+  background: rgba(3, 3, 4, .94);
+  border: 1px solid var(--line); border-radius: 12px;
+  font: 400 .85rem/1.55 var(--sans); letter-spacing: 0;
+  color: var(--muted);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.legend dl { margin: 0; display: grid; gap: .8rem; }
+.legend dl > div { display: grid; grid-template-columns: 5rem 1fr; gap: .8rem; }
+.legend dt { font: .72rem/2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.legend dt.lc { text-transform: none; }
+.legend dd { margin: 0; color: var(--fg); }
+@media (max-width: 760px) { .telemetry { display: none; } }

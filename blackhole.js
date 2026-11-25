@@ -277,7 +277,7 @@
     this.pass(S, t.scene);
     gl.uniform2f(S.u.uRes, t.scene.w, t.scene.h);
     gl.uniform1f(S.u.uTime, s.time);
-    gl.uniform1f(S.u.uDist, s.dist);
+    gl.uniform1f(S.u.uDist, s.camDist || s.dist);
     gl.uniform1f(S.u.uTilt, s.tilt);
     gl.uniform1f(S.u.uYaw, s.yaw);
     gl.uniform1f(S.u.uRoll, s.roll || 0);
